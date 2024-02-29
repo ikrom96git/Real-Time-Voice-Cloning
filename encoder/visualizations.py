@@ -42,11 +42,7 @@ class Visualizations:
 
         # Set the environment name
         now = str(datetime.now().strftime("%d-%m %Hh%M"))
-        if env_name is None:
-            self.env_name = now
-        else:
-            self.env_name = "%s (%s)" % (env_name, now)
-
+        self.env_name = now if env_name is None else f"{env_name} ({now})"
         # Connect to visdom and open the corresponding window in the browser
         try:
             self.vis = visdom.Visdom(server, env=self.env_name, raise_exceptions=True)
@@ -113,7 +109,7 @@ class Visualizations:
         if step % self.update_every != 0:
             return
         time_string = "Step time:  mean: %5dms  std: %5dms" % \
-                      (int(np.mean(self.step_times)), int(np.std(self.step_times)))
+                          (int(np.mean(self.step_times)), int(np.std(self.step_times)))
         print("\nStep %6d   Loss: %.4f   EER: %.4f   %s" %
               (step, np.mean(self.losses), np.mean(self.eers), time_string))
         if not self.disabled:
@@ -143,7 +139,7 @@ class Visualizations:
             )
             if self.implementation_win is not None:
                 self.vis.text(
-                    self.implementation_string + ("<b>%s</b>" % time_string),
+                    f"{self.implementation_string}<b>{time_string}</b>",
                     win=self.implementation_win,
                     opts={"title": "Training implementation"},
                 )

@@ -5,6 +5,7 @@ import argparse
 
 
 if __name__ == "__main__":
+
     class MyFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawDescriptionHelpFormatter):
         pass
 
@@ -67,5 +68,5 @@ if __name__ == "__main__":
     }
     args = vars(args)
     for dataset in args.pop("datasets"):
-        print("Preprocessing %s" % dataset)
+        print(f"Preprocessing {dataset}")
         preprocess_func[dataset](**args)

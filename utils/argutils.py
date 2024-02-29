@@ -11,13 +11,11 @@ _type_priorities = [    # In decreasing order
 ]
 
 def _priority(o):
-    p = next((i for i, t in enumerate(_type_priorities) if type(o) is t), None) 
+    p = next((i for i, t in enumerate(_type_priorities) if type(o) is t), None)
     if p is not None:
         return p
-    p = next((i for i, t in enumerate(_type_priorities) if isinstance(o, t)), None) 
-    if p is not None:
-        return p
-    return len(_type_priorities)
+    p = next((i for i, t in enumerate(_type_priorities) if isinstance(o, t)), None)
+    return p if p is not None else len(_type_priorities)
 
 def print_args(args: argparse.Namespace, parser=None):
     args = vars(args)

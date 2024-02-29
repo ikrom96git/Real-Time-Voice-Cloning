@@ -39,11 +39,11 @@ def train(run_id: str, syn_dir: Path, models_dir: Path, save_every: int,  backup
     mel_output_dir.mkdir(exist_ok=True)
     meta_folder.mkdir(exist_ok=True)
 
-    weights_fpath = model_dir / f"synthesizer.pt"
+    weights_fpath = model_dir / "synthesizer.pt"
     metadata_fpath = syn_dir.joinpath("train.txt")
 
-    print("Checkpoint path: {}".format(weights_fpath))
-    print("Loading training data from: {}".format(metadata_fpath))
+    print(f"Checkpoint path: {weights_fpath}")
+    print(f"Loading training data from: {metadata_fpath}")
     print("Using model: Tacotron")
 
     # Bookkeeping
@@ -94,7 +94,7 @@ def train(run_id: str, syn_dir: Path, models_dir: Path, save_every: int,  backup
                 if symbol == " ":
                     symbol = "\\s"  # For visual purposes, swap space with \s
 
-                f.write("{}\n".format(symbol))
+                f.write(f"{symbol}\n")
 
     else:
         print("\nLoading weights at %s" % weights_fpath)
@@ -116,22 +116,24 @@ def train(run_id: str, syn_dir: Path, models_dir: Path, save_every: int,  backup
 
         # Do we need to change to the next session?
         if current_step >= max_step:
-            # Are there no further sessions than the current one?
-            if i == len(hparams.tts_schedule) - 1:
-                # We have completed training. Save the model and exit
-                model.save(weights_fpath, optimizer)
-                break
-            else:
+            if i != len(hparams.tts_schedule) - 1:
                 # There is a following session, go to it
                 continue
 
+            # We have completed training. Save the model and exit
+            model.save(weights_fpath, optimizer)
+            break
         model.r = r
 
         # Begin the training
-        simple_table([(f"Steps with r={r}", str(training_steps // 1000) + "k Steps"),
-                      ("Batch Size", batch_size),
-                      ("Learning Rate", lr),
-                      ("Outputs/Step (r)", model.r)])
+        simple_table(
+            [
+                (f"Steps with r={r}", f"{str(training_steps // 1000)}k Steps"),
+                ("Batch Size", batch_size),
+                ("Learning Rate", lr),
+                ("Outputs/Step (r)", model.r),
+            ]
+        )
 
         for p in optimizer.param_groups:
             p["lr"] = lr
@@ -237,22 +239,30 @@ def train(run_id: str, syn_dir: Path, models_dir: Path, save_every: int,  backup
 def eval_model(attention, mel_prediction, target_spectrogram, input_seq, step,
                plot_dir, mel_output_dir, wav_dir, sample_num, loss, hparams):
     # Save some results for evaluation
-    attention_path = str(plot_dir.joinpath("attention_step_{}_sample_{}".format(step, sample_num)))
+    attention_path = str(
+        plot_dir.joinpath(f"attention_step_{step}_sample_{sample_num}")
+    )
     save_attention(attention, attention_path)
 
     # save predicted mel spectrogram to disk (debug)
-    mel_output_fpath = mel_output_dir.joinpath("mel-prediction-step-{}_sample_{}.npy".format(step, sample_num))
+    mel_output_fpath = mel_output_dir.joinpath(
+        f"mel-prediction-step-{step}_sample_{sample_num}.npy"
+    )
     np.save(str(mel_output_fpath), mel_prediction, allow_pickle=False)
 
     # save griffin lim inverted wav for debug (mel -> wav)
     wav = audio.inv_mel_spectrogram(mel_prediction.T, hparams)
-    wav_fpath = wav_dir.joinpath("step-{}-wave-from-mel_sample_{}.wav".format(step, sample_num))
+    wav_fpath = wav_dir.joinpath(
+        f"step-{step}-wave-from-mel_sample_{sample_num}.wav"
+    )
     audio.save_wav(wav, str(wav_fpath), sr=hparams.sample_rate)
 
     # save real and predicted mel-spectrogram plot to disk (control purposes)
-    spec_fpath = plot_dir.joinpath("step-{}-mel-spectrogram_sample_{}.png".format(step, sample_num))
+    spec_fpath = plot_dir.joinpath(
+        f"step-{step}-mel-spectrogram_sample_{sample_num}.png"
+    )
     title_str = "{}, {}, step={}, loss={:.5f}".format("Tacotron", time_string(), step, loss)
     plot_spectrogram(mel_prediction, str(spec_fpath), title=title_str,
                      target_spectrogram=target_spectrogram,
                      max_len=target_spectrogram.size // hparams.num_mels)
-    print("Input at step {}: {}".format(step, sequence_to_text(input_seq)))
+    print(f"Input at step {step}: {sequence_to_text(input_seq)}")
