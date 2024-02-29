@@ -39,8 +39,8 @@ def preprocess_dataset(datasets_root: Path, out_dir: Path, n_processes: int, ski
     # Verify the contents of the metadata file
     with metadata_fpath.open("r", encoding="utf-8") as metadata_file:
         metadata = [line.split("|") for line in metadata_file]
-    mel_frames = sum([int(m[4]) for m in metadata])
-    timesteps = sum([int(m[3]) for m in metadata])
+    mel_frames = sum(int(m[4]) for m in metadata)
+    timesteps = sum(int(m[3]) for m in metadata)
     sample_rate = hparams.sample_rate
     hours = (timesteps / sample_rate) / 3600
     print("The dataset consists of %d utterances, %d mel frames, %d audio timesteps (%.2f hours)." %
@@ -74,7 +74,7 @@ def preprocess_speaker(speaker_dir, out_dir: Path, skip_existing: bool, hparams,
                         text_fpath = wav_fpath.with_suffix(".normalized.txt")
                         assert text_fpath.exists()
                     with text_fpath.open("r") as text_file:
-                        text = "".join([line for line in text_file])
+                        text = "".join(list(text_file))
                         text = text.replace("\"", "")
                         text = text.strip()
 
@@ -94,7 +94,7 @@ def preprocess_speaker(speaker_dir, out_dir: Path, skip_existing: bool, hparams,
 
             # Iterate over each entry in the alignments file
             for wav_fname, words, end_times in alignments:
-                wav_fpath = book_dir.joinpath(wav_fname + ".flac")
+                wav_fpath = book_dir.joinpath(f"{wav_fname}.flac")
                 assert wav_fpath.exists()
                 words = words.replace("\"", "").split(",")
                 end_times = list(map(float, end_times.replace("\"", "").split(",")))
@@ -197,8 +197,8 @@ def process_utterance(wav: np.ndarray, text: str, out_dir: Path, basename: str,
 
 
     # Skip existing utterances if needed
-    mel_fpath = out_dir.joinpath("mels", "mel-%s.npy" % basename)
-    wav_fpath = out_dir.joinpath("audio", "audio-%s.npy" % basename)
+    mel_fpath = out_dir.joinpath("mels", f"mel-{basename}.npy")
+    wav_fpath = out_dir.joinpath("audio", f"audio-{basename}.npy")
     if skip_existing and mel_fpath.exists() and wav_fpath.exists():
         return None
 
@@ -223,7 +223,14 @@ def process_utterance(wav: np.ndarray, text: str, out_dir: Path, basename: str,
     np.save(wav_fpath, wav, allow_pickle=False)
 
     # Return a tuple describing this training example
-    return wav_fpath.name, mel_fpath.name, "embed-%s.npy" % basename, len(wav), mel_frames, text
+    return (
+        wav_fpath.name,
+        mel_fpath.name,
+        f"embed-{basename}.npy",
+        len(wav),
+        mel_frames,
+        text,
+    )
 
 
 def embed_utterance(fpaths, encoder_model_fpath):
